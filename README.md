@@ -4,6 +4,8 @@ An end-to-end analytics and AI workflow for monitoring monthly reseller growth.
 
 This project combines **SQL analytics, growth detection, data validation, AI-assisted narrative generation, and an agent workflow** to identify significant changes in monthly reseller category revenue.
 
+---
+
 ## What This Project Does
 
 * Generates a deterministic reseller dataset
@@ -17,6 +19,8 @@ This project combines **SQL analytics, growth detection, data validation, AI-ass
 * Uses an agent workflow with human approval
 * Produces structured JSON output
 
+---
+
 ## Tech Stack
 
 * Python
@@ -26,8 +30,11 @@ This project combines **SQL analytics, growth detection, data validation, AI-ass
 * AI Prompt Engineering
 * Agentic Workflow Design
 
+---
+
 ## Project Structure
 
+```text
 meesho-reseller-growth-alert-pipeline/
 │
 ├── data/
@@ -60,11 +67,15 @@ meesho-reseller-growth-alert-pipeline/
 │   └── test_mock_agent_runner.py
 │
 └── README.md
+```
+
+---
 
 ## How the Parts Connect
 
 The project works as one connected pipeline:
 
+```text
 Dataset Generation
         ↓
 Part 1 — SQL Analytics
@@ -81,12 +92,15 @@ Verified Growth Results
                               Structured JSON
                                       ↓
                               Human Approval
+```
 
 ### Part 1 → Part 2
 
 Part 1 generates the monthly category revenue output:
 
+```text
 part1_sql/output/monthly_category_revenue(ques1).csv
+```
 
 This SQL output is used as the input feed for the Part 2 growth engine.
 
@@ -113,19 +127,25 @@ Part 4 uses the validated feed and Part 2 growth logic to:
 * Escalate exact 8% boundary cases
 * Generate drafts for human approval
 
+---
+
 # 1. Dataset Generation
 
 The project uses a deterministic local dataset.
 
 The dataset is generated using:
 
+```text
 data/generate_dataset.py
+```
 
 It creates:
 
+```text
 data/resellers.csv
 data/orders.csv
 data/meesho_reseller.db
+```
 
 ### Regenerate the Dataset
 
@@ -137,18 +157,24 @@ python data/generate_dataset.py
 
 The generated SQLite database is then used by Part 1.
 
+---
+
 # 2. Part 1 — SQL Analytics
 
 Part 1 analyzes the SQLite database using SQL queries.
 
 Main files:
 
+```text
 part1_sql/queries.py
 part1_sql/queries.sql
+```
 
 The results are saved in:
 
+```text
 part1_sql/output/
+```
 
 ### Run Part 1
 
@@ -158,14 +184,18 @@ python part1_sql/queries.py
 
 The main outputs include:
 
+```text
 monthly_category_revenue(ques1).csv
 region_revenue(ques2).csv
 top_resellers(ques3).csv
 zero_order_resellers(ques4.1).csv
 zero_order_count_demo(ques4.2).csv
 june_aov(ques5).csv
+```
 
 The monthly category revenue output is passed to Part 2.
+
+---
 
 # 3. Part 2 — Growth Engine
 
@@ -178,13 +208,17 @@ Part 2 performs:
 
 Main file:
 
+```text
 part2_engine/growth_engine.py
+```
 
 Key functions:
 
+```text
 mom_growth(previous, current)
 is_flagged(mom_pct, threshold=8.0)
 validate_feed(csv_path)
+```
 
 ### Run Part 2 Tests
 
@@ -194,9 +228,13 @@ python -m pytest part2_engine -v
 
 Part 2 also contains a corrupted-feed fixture:
 
+```text
 part2_engine/fixtures/corrupted_feed.csv
+```
 
 This is used to test validation and error handling.
+
+---
 
 # 4. Part 3 — Narrative Generation
 
@@ -204,15 +242,19 @@ Part 3 converts verified analytics results into stakeholder-friendly narratives.
 
 Main files:
 
+```text
 part3_narrative/
 ├── masking.py
 ├── prompt_template.py
 ├── prompt_pack.md
 └── narrative_report.md
+```
 
 The narrative structure follows:
 
+```text
 Context → Insight → Implication
+```
 
 Part 3 also masks reseller names to prevent raw reseller names from appearing in stakeholder narratives.
 
@@ -224,15 +266,19 @@ python -m pytest part3_narrative -v
 
 The tests verify reseller aliasing and raw-name leak protection.
 
+---
+
 # 5. Part 4 — Agent Workflow
 
 Part 4 integrates the analytics, growth detection, and narrative workflow into a guarded mock monitoring agent.
 
 Main files:
 
+```text
 part4_agent/agent_spec.md
 part4_agent/mock_agent_runner.py
 part4_agent/test_mock_agent_runner.py
+```
 
 The agent performs these steps:
 
@@ -255,16 +301,20 @@ The agent **does not send real messages**. Drafts are held for human approval.
 python -m pytest part4_agent -v
 ```
 
+---
+
 # 6. Part 4 Scenarios
 
 Part 4 includes fixtures for different monthly scenarios:
 
+```text
 part4_agent/fixtures/
 ├── april.csv
 ├── may.csv
 ├── june.csv
 ├── boundary_previous.csv
 └── boundary_current.csv
+```
 
 These are used to test:
 
@@ -276,6 +326,8 @@ These are used to test:
 * Suppression
 * Escalation
 
+---
+
 # 7. Guardrails
 
 The workflow includes several safeguards.
@@ -284,7 +336,9 @@ The workflow includes several safeguards.
 
 The current-month feed must pass:
 
+```text
 validate_feed()
+```
 
 before growth calculations or message drafting begin.
 
@@ -310,10 +364,13 @@ Reseller names are masked before appearing in stakeholder narratives.
 
 An exact **8% MoM change** is handled separately as an escalation case rather than a normal flagged category.
 
+---
+
 # 8. Structured JSON Output
 
 Every Part 4 run returns a structured JSON object containing:
 
+```text
 run_month
 validation_status
 validation_errors
@@ -321,15 +378,20 @@ flagged_categories
 suppressed_categories
 escalated_categories
 action_taken
+```
 
 A drafted category contains:
 
+```text
 category
 mom_pct
 previous_revenue
 current_revenue
 drafted
 message
+```
+
+---
 
 # 9. Run the Complete Project
 
@@ -369,6 +431,8 @@ python -m pytest part4_agent -v
 python -m pytest -v
 ```
 
+---
+
 # 10. Offline Execution
 
 The project is designed to run locally and offline.
@@ -384,8 +448,11 @@ It does not require:
 
 Part 4 only creates message drafts and holds them for human approval.
 
+---
+
 ## End-to-End Flow
 
+```text
 Dataset Generation
         ↓
 SQLite Database
@@ -406,6 +473,9 @@ Verified MoM Results
                               Structured JSON
                                       ↓
                               Human Approval
+```
+
+---
 
 ## Testing
 
@@ -427,6 +497,8 @@ Part 1 is executed separately with:
 python part1_sql/queries.py
 ```
 
+---
+
 ## Project Design Principles
 
 * **Data validation before processing**
@@ -436,3 +508,4 @@ python part1_sql/queries.py
 * **Deterministic and reproducible dataset**
 * **Automated testing**
 
+---
